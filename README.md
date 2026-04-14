@@ -29,11 +29,31 @@ An AI-powered fashion recommendation system that uses **CLIP** for visual simila
 pip install -r requirements.txt
 ```
 
-### 2. Configure dataset paths
+### 2. Download datasets
+
+The image datasets are **not included** in this repo due to size. Download them and place under an `archive/` directory:
+
+| Dataset | Source | Description |
+|---------|--------|-------------|
+| **DeepFashion2** | [GitHub](https://github.com/switchablenorms/DeepFashion2) | ~191K fashion images (train/val/test splits) |
+| **eBay Fashion** | [Kaggle](https://www.kaggle.com/datasets) | eBay product listings with images |
+| **Amazon Fashion** | [Kaggle](https://www.kaggle.com/datasets) | Amazon product listings with images |
+
+**Pre-computed metadata** (parquet files) are included in the `data/` folder:
+
+| File | Records | Size |
+|------|---------|------|
+| `cache_df2_test_metadata.parquet` | DeepFashion2 test split | 1.1 MB |
+| `cache_df2_train_metadata.parquet` | DeepFashion2 train split | 2.7 MB |
+| `cache_df2_val_metadata.parquet` | DeepFashion2 validation split | 0.6 MB |
+| `cache_ebay_small_metadata.parquet` | eBay Fashion | 3.4 MB |
+| `cache_ebay_large_metadata.parquet` | Amazon Fashion | 10.3 MB |
+
+### 3. Configure dataset paths
 
 Edit the `_BASE` and `DATASET_CONFIGS` variables in `recommender.py` to point to your local dataset directories.
 
-### 3. Run
+### 4. Run
 
 ```bash
 python app.py
@@ -59,6 +79,7 @@ fashion-recommender/
 ├── recommender.py      # Core ML pipeline (CLIP, FAISS, BLIP, reranking)
 ├── auth.py             # User authentication & preference persistence
 ├── requirements.txt    # Python dependencies
+├── data/               # Pre-computed metadata (parquet files)
 ├── static/
 │   ├── app.js          # Frontend search UI logic
 │   ├── style.css       # Main application styles
