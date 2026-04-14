@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Fashion Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/auth.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">✦</span>
+      <span class="logo-text">Fashion<strong>Finder</strong></span>
+      <span class="badge badge--admin" style="margin-left:.6rem">Admin</span>
+    </div>
+    <div class="header-actions">
+      <span class="muted" style="font-size:.85rem">{{ username }}</span>
+      <a href="/logout" class="btn btn--ghost">Sign Out</a>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+
+    <!-- Stats row -->
+    <div class="admin-stats">
+      <div class="stat-card">
+        <span class="stat-card__value">{{ users | length }}</span>
+        <span class="stat-card__label">Total Users</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value">{{ total_searches }}</span>
+        <span class="stat-card__label">Total Searches</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value">{{ "{:,}".format(total_images) }}</span>
+        <span class="stat-card__label">Images Indexed</span>
+      </div>
+    </div>
+
+    <!-- Datasets -->
+    <div class="admin-section">
+      <h2 class="admin-section__title">Datasets</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Key</th><th>Label</th><th>Images</th></tr></thead>
+          <tbody>
+            {% for ds in datasets %}
+            <tr>
+              <td><code>{{ ds.key }}</code></td>
+              <td>{{ ds.label }}</td>
+              <td>{{ "{:,}".format(ds.count) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="admin-section">
+      <h2 class="admin-section__title">Users</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Registered</th>
+              <th>Searches</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>
+                <a href="/admin/user/{{ u.username }}" class="admin-link">{{ u.username }}</a>
+              </td>
+              <td>
+                <span class="badge {% if u.role == 'admin' %}badge--admin{% else %}badge--user{% endif %}">
+                  {{ u.role }}
+                </span>
+              </td>
+              <td class="muted">{{ u.created[:10] }}</td>
+              <td>{{ u.searches }}</td>
+              <td>
+                {% if u.role != 'admin' %}
+                <form method="POST" action="/admin/delete/{{ u.username }}"
+                      onsubmit="return confirm('Delete {{ u.username }}?')">
+                  <button type="submit" class="admin-del-btn">Delete</button>
+                </form>
+                {% else %}
+                <span class="muted">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Create user -->
+    <div class="admin-section">
+      <h2 class="admin-section__title">Create User</h2>
+      {% if create_error %}<div class="auth-error">{{ create_error }}</div>{% endif %}
+      {% if create_ok %}<div class="auth-ok">{{ create_ok }}</div>{% endif %}
+      <form method="POST" action="/admin/create" class="admin-create-form">
+        <input class="auth-input" type="text"     name="username" placeholder="Username" required />
+        <input class="auth-input" type="password" name="password" placeholder="Password" required />
+        <select class="auth-input" name="role">
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+        <button type="submit" class="btn btn--primary" style="width:auto;padding:.55rem 1.4rem">Create</button>
+      </form>
+    </div>
+
+  </div>
+
+</body>
+</html>

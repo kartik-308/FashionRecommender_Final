@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User: {{ profile.username }} — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/auth.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">✦</span>
+      <span class="logo-text">Fashion<strong>Finder</strong></span>
+      <span class="badge badge--admin" style="margin-left:.6rem">Admin</span>
+    </div>
+    <div class="header-actions">
+      <a href="/admin" class="btn btn--ghost">← Back</a>
+      <a href="/logout" class="btn btn--ghost">Sign Out</a>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+
+    <div class="admin-section">
+      <h2 class="admin-section__title">
+        {{ profile.username }}
+        <span class="badge {% if profile.role=='admin' %}badge--admin{% else %}badge--user{% endif %}" style="margin-left:.5rem">
+          {{ profile.role }}
+        </span>
+      </h2>
+      <p class="muted">Registered: {{ profile.created[:10] }}</p>
+    </div>
+
+    <!-- Preferences summary -->
+    <div class="admin-section">
+      <h2 class="admin-section__title">Saved Preferences</h2>
+      {% if profile.preferences %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Dataset</th><th>Rejected items</th><th>Shown items</th><th>Has pref vector</th></tr></thead>
+          <tbody>
+            {% for ds_key, pref in profile.preferences.items() %}
+            <tr>
+              <td><code>{{ ds_key }}</code></td>
+              <td>{{ pref.rejected | length }}</td>
+              <td>{{ pref.shown | length }}</td>
+              <td>{{ "Yes" if pref.pref_vec else "No" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">No preferences saved yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Search history -->
+    <div class="admin-section">
+      <h2 class="admin-section__title">Search History (last {{ history | length }})</h2>
+      {% if history %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Time</th><th>Dataset</th><th>Query</th><th>Mode</th><th>Top result</th></tr></thead>
+          <tbody>
+            {% for h in history | reverse %}
+            <tr>
+              <td class="muted" style="white-space:nowrap">{{ h.time[:16].replace("T"," ") }}</td>
+              <td><code>{{ h.dataset }}</code></td>
+              <td>{{ h.query or "—" }}</td>
+              <td>{{ h.mode }}</td>
+              <td class="muted">{{ h.top_result or "—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">No searches yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</body>
+</html>

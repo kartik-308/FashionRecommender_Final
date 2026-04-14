@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fashion Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/auth.css" />
+  <!-- Inject server-side user context before any JS runs -->
+  <script>window.__USER__ = { username: {{ username | tojson }}, role: {{ role | tojson }} };</script>
+</head>
+<body>
+
+  <!-- ── Full-screen loader ── -->
+  <div class="page-loader" id="page-loader">
+    <div class="page-loader__inner">
+      <!-- Orbiting dots -->
+      <div class="loader-orbit">
+        <div class="loader-orbit__core"></div>
+        <div class="loader-orbit__dot"></div>
+        <div class="loader-orbit__dot"></div>
+        <div class="loader-orbit__dot"></div>
+      </div>
+      <div class="loader-logo">
+        <span class="loader-logo__icon">✦</span>
+        <span class="loader-logo__text">Fashion<strong>Finder</strong></span>
+      </div>
+      <div class="loader-bar-wrap">
+        <div class="loader-bar" id="loader-bar"></div>
+      </div>
+      <p class="loader-msg" id="loader-msg">Initialising model…</p>
+      <div class="loader-steps">
+        <div class="loader-step" id="step-clip">
+          <span class="loader-step__dot"></span><span>Loading CLIP</span>
+        </div>
+        <div class="loader-step" id="step-embed">
+          <span class="loader-step__dot"></span><span>Loading embeddings</span>
+        </div>
+        <div class="loader-step" id="step-faiss">
+          <span class="loader-step__dot"></span><span>Building search index</span>
+        </div>
+        <div class="loader-step" id="step-ready">
+          <span class="loader-step__dot"></span><span>Ready</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">✦</span>
+      <span class="logo-text">Fashion<strong>Finder</strong></span>
+    </div>
+    <div class="header-actions">
+      <div id="status-badge" class="badge badge--loading">Initialising…</div>
+      <div class="user-bar">
+        <span id="header-username" class="user-bar__name"></span>
+        <a id="header-admin-link" href="/admin" class="badge badge--admin"
+           style="text-decoration:none;cursor:pointer;display:none">Admin Panel</a>
+      </div>
+      <button id="btn-reset" class="btn btn--ghost">↺ Reset</button>
+      <a id="btn-signout" href="/logout" class="btn btn--ghost">Sign Out</a>
+    </div>
+  </header>
+
+  <!-- ── Main layout ── -->
+  <main class="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+      <h2 class="sidebar-title">Find Your Style</h2>
+
+      <div class="mode-tabs" role="tablist">
+        <button class="tab tab--active" data-mode="text"       role="tab">Text</button>
+        <button class="tab"             data-mode="image"      role="tab">Image</button>
+        <button class="tab"             data-mode="multimodal" role="tab">Both</button>
+      </div>
+
+      <form id="search-form" enctype="multipart/form-data">
+
+        <div class="field" id="field-text">
+          <label class="label" for="text-input">Describe what you're looking for</label>
+          <textarea id="text-input" name="text" class="textarea"
+                    placeholder="e.g. white floral summer dress…" rows="3"></textarea>
+        </div>
+
+        <div class="field hidden" id="field-image">
+          <label class="label">Upload a reference photo</label>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="image-input" name="image" accept="image/*" class="drop-zone__input" />
+            <div class="drop-zone__body" id="drop-body">
+              <span class="drop-zone__icon">🖼</span>
+              <span class="drop-zone__hint">Drag & drop or <u>browse</u></span>
+            </div>
+            <img id="preview-img" class="drop-zone__preview hidden" alt="preview" />
+            <button type="button" id="btn-clear-img" class="drop-zone__clear hidden">✕</button>
+          </div>
+        </div>
+
+        <div class="field hidden" id="field-weight">
+          <label class="label">
+            Text weight: <strong id="tw-label">50%</strong>
+            &nbsp;/&nbsp; Image weight: <strong id="iw-label">50%</strong>
+          </label>
+          <input type="range" id="weight-slider" name="text_weight"
+                 min="0" max="1" step="0.05" value="0.5" class="slider" />
+          <div class="slider-labels">
+            <span>Image</span><span>Balanced</span><span>Text</span>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-search" class="btn btn--primary" disabled>
+          <span class="btn-text">Search</span>
+          <span class="btn-spinner hidden">⟳</span>
+        </button>
+      </form>
+
+      <div class="tips">
+        <p class="tips-title">Try these</p>
+        <div class="chips" id="example-chips">
+          <button class="chip">white graphic t-shirt</button>
+          <button class="chip">floral summer dress</button>
+          <button class="chip">black skinny jeans</button>
+          <button class="chip">blue denim jacket</button>
+          <button class="chip">oversized hoodie</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Results panel ── -->
+    <section class="results-panel">
+
+      <div class="query-bar hidden" id="query-bar">
+        <div class="query-bar__left">
+          <img id="query-thumb" class="query-thumb hidden" alt="query" />
+          <div>
+            <span class="query-bar__label">Results for</span>
+            <span class="query-bar__text" id="query-bar-text"></span>
+          </div>
+        </div>
+        <span class="query-bar__mode" id="query-bar-mode"></span>
+      </div>
+
+      <!-- Drift notification banner -->
+      <div class="drift-banner hidden" id="drift-banner">
+        <span class="drift-banner__icon">&#x1F504;</span>
+        <span class="drift-banner__text">Your taste seems to be evolving! Adapting recommendations...</span>
+        <span class="drift-banner__score" id="drift-score"></span>
+      </div>
+
+      <div class="cards-grid" id="cards-grid">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-state__icon">👗</div>
+          <p>Your recommendations will appear here.</p>
+          <p class="muted">Start by typing a description or uploading a photo.</p>
+        </div>
+      </div>
+
+      <div class="history-section hidden" id="history-section">
+        <div class="history-row" id="history-row-liked">
+          <div class="history-row__header">
+            <span class="history-row__dot history-row__dot--liked"></span>
+            <span class="history-row__label">Liked</span>
+            <span class="history-row__count" id="liked-count">0</span>
+          </div>
+          <div class="history-strip" id="history-strip-liked"></div>
+        </div>
+        <div class="history-row" id="history-row-accepted">
+          <div class="history-row__header">
+            <span class="history-row__dot history-row__dot--accepted"></span>
+            <span class="history-row__label">Shown</span>
+            <span class="history-row__count" id="accepted-count">0</span>
+          </div>
+          <div class="history-strip" id="history-strip-accepted"></div>
+        </div>
+        <div class="history-row" id="history-row-rejected">
+          <div class="history-row__header">
+            <span class="history-row__dot history-row__dot--rejected"></span>
+            <span class="history-row__label">Rejected</span>
+            <span class="history-row__count" id="rejected-count">0</span>
+          </div>
+          <div class="history-strip" id="history-strip-rejected"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast hidden" id="toast"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

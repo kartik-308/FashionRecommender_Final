@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fashion Finder — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/auth.css" />
+</head>
+<body class="auth-body">
+
+  <div class="auth-card">
+    <a href="/login" class="auth-back">← Back</a>
+
+    <div class="auth-logo">
+      <span class="logo-icon">✦</span>
+      <span class="logo-text">Fashion<strong>Finder</strong></span>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab {% if mode != 'register' %}auth-tab--active{% endif %}" id="tab-login">Sign In</button>
+      <button class="auth-tab {% if mode == 'register' %}auth-tab--active{% endif %}" id="tab-register">Register</button>
+    </div>
+
+    {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+
+    <form id="form-login" class="auth-form {% if mode == 'register' %}hidden{% endif %}"
+          method="POST" action="/login/user">
+      <input type="hidden" name="action" value="login" />
+      <div class="auth-field">
+        <label class="label">Username</label>
+        <input class="auth-input" type="text" name="username" placeholder="your username" required />
+      </div>
+      <div class="auth-field">
+        <label class="label">Password</label>
+        <input class="auth-input" type="password" name="password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn btn--primary">Sign In</button>
+    </form>
+
+    <form id="form-register" class="auth-form {% if mode == 'register' %}{% else %}hidden{% endif %}"
+          method="POST" action="/login/user">
+      <input type="hidden" name="action" value="register" />
+      <div class="auth-field">
+        <label class="label">Username</label>
+        <input class="auth-input" type="text" name="username" placeholder="choose a username" required />
+      </div>
+      <div class="auth-field">
+        <label class="label">Password</label>
+        <input class="auth-input" type="password" name="password" placeholder="min 4 characters" required />
+      </div>
+      <button type="submit" class="btn btn--primary">Create Account</button>
+    </form>
+  </div>
+
+  <script>
+    const tl = document.getElementById("tab-login");
+    const tr = document.getElementById("tab-register");
+    const fl = document.getElementById("form-login");
+    const fr = document.getElementById("form-register");
+    tl.onclick = () => { tl.classList.add("auth-tab--active"); tr.classList.remove("auth-tab--active"); fl.classList.remove("hidden"); fr.classList.add("hidden"); };
+    tr.onclick = () => { tr.classList.add("auth-tab--active"); tl.classList.remove("auth-tab--active"); fr.classList.remove("hidden"); fl.classList.add("hidden"); };
+  </script>
+</body>
+</html>
